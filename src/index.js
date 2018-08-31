@@ -208,9 +208,6 @@ export default function svelte(options = {}) {
 					const file = path.basename(id, path.extname(id));
 					const exported = file.slice(0, 1).toUpperCase() + file.slice(1);
 
-					console.log(`exports: ${exported}`);
-					console.log(compiled.js.code);
-
 					const out = `
 						import {Registry, createProxy} from ${JSON.stringify(require.resolve('svelte-dev-helper'))};
 
@@ -224,16 +221,14 @@ export default function svelte(options = {}) {
 							instances:[]
 						});
 
-						export createProxy(id);
+						export default createProxy(id);
 					`;
 
 					console.log(out);
-					
+
 					// TODO: use magic-string to maintain sourcemaps?
 					compiled.js.code = out;
 				}
-
-				console.log(options);
 
 				if ((css || options.emitCss) && compiled.css.code) {
 					let fname = id.replace('.html', '.css');
@@ -243,8 +238,6 @@ export default function svelte(options = {}) {
 					}
 
 				}
-
-				
 
 				return compiled.js;
 			});
