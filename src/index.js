@@ -4,6 +4,7 @@ import relative from 'require-relative';
 import { compile, preprocess } from 'svelte';
 import { createFilter } from 'rollup-pluginutils';
 import { encode, decode } from 'sourcemap-codec';
+import MagicString from 'magic-string';
 
 function sanitize(input) {
 	return path
@@ -208,13 +209,20 @@ export default function svelte(options = {}) {
 					const file = path.basename(id, path.extname(id));
 					const exported = file.slice(0, 1).toUpperCase() + file.slice(1);
 
-					const out = `
+					const s = new MagicString(compiled.js.code);
+
+					s.prepend(`
 						import {Registry, createProxy} from ${JSON.stringify(require.resolve('svelte-dev-helper'))};
 
 						const id = ${JSON.stringify(exported)};
+					`);
 
-						${compiled.js.code.replace(`export default ${exported};`, '')}
+					s.remove(
+						compiled.js.code.length - (`export default ${exported};`).length,
+						compiled.js.code.length
+					);
 
+					s.append(`
 						Registry.set(id, {
 							rollback: null,
 							component: ${exported},
@@ -222,12 +230,12 @@ export default function svelte(options = {}) {
 						});
 
 						export default createProxy(id);
-					`;
-
-					console.log(out);
-
-					// TODO: use magic-string to maintain sourcemaps?
-					compiled.js.code = out;
+					`);
+					
+					compiled.js = {
+						code : s.toString(),
+						map  : s.generateMap()
+					};
 				}
 
 				if ((css || options.emitCss) && compiled.css.code) {
