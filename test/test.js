@@ -46,6 +46,13 @@ describe('rollup-plugin-svelte', () => {
 			assert.deepEqual(Object.keys(compiled), ['code', 'map']);
 		});
 	});
+	
+	it.only('wraps the component into the register in devHelper mode', () => {
+		const { transform } = plugin({ devHelper : true });
+		return transform('', 'test.html').then(compiled => {
+			assert.deepEqual(Object.keys(compiled), ['code', 'map']);
+		});
+	});
 
 	it('generates a CSS sourcemap', () => {
 		sander.rimrafSync('test/sourcemap-test/dist');
@@ -167,8 +174,8 @@ describe('rollup-plugin-svelte', () => {
 			h1 {
 				color: red;
 			}
-		</style>`, `path/to/Input.html`).then(transformed => {
-			assert.ok(transformed.code.indexOf(`import 'path/to/Input.css';`) !== -1);
+		</style>`, 'path/to/Input.html').then(transformed => {
+			assert.ok(transformed.code.indexOf('import \'path/to/Input.css\';') !== -1);
 
 			const css = load('path/to/Input.css');
 

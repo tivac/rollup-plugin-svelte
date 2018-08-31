@@ -204,6 +204,37 @@ export default function svelte(options = {}) {
 					})
 				);
 
+				if (options.devHelper) {
+					const file = path.basename(id, path.extname(id));
+					const exported = file.slice(0, 1).toUpperCase() + file.slice(1);
+
+					console.log(`exports: ${exported}`);
+					console.log(compiled.js.code);
+
+					const out = `
+						import {Registry, createProxy} from ${JSON.stringify(require.resolve('svelte-dev-helper'))};
+
+						const id = ${JSON.stringify(exported)};
+
+						${compiled.js.code.replace(`export default ${exported};`, '')}
+
+						Registry.set(id, {
+							rollback: null,
+							component: ${exported},
+							instances:[]
+						});
+
+						export createProxy(id);
+					`;
+
+					console.log(out);
+					
+					// TODO: use magic-string to maintain sourcemaps?
+					compiled.js.code = out;
+				}
+
+				console.log(options);
+
 				if ((css || options.emitCss) && compiled.css.code) {
 					let fname = id.replace('.html', '.css');
 					cssLookup.set(fname, compiled.css);
@@ -212,6 +243,8 @@ export default function svelte(options = {}) {
 					}
 
 				}
+
+				
 
 				return compiled.js;
 			});
